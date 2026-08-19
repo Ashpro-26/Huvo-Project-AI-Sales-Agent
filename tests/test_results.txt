@@ -1,0 +1,85 @@
+Running tests. mock_mode=True
+
+======================================================================
+SCENARIO: Basic price inquiry (English)
+EXPECTED: Bot states only known prices (2 BHK ₹1.35 Cr / 3 BHK ₹1.75 Cr), asks a qualifying question, invents nothing.
+----------------------------------------------------------------------
+USER : Hi, what's the price of a 2 BHK at Northstar One?
+BOT  : Northstar One has 2 BHK starting at ₹1.35 crore and 3 BHK starting at ₹1.75 crore, in Sector 79, Gurugram. Which configuration are you leaning towards?
+
+ANALYTICS: {'session_id': '96547e15-3556-4db2-afb8-df96aacfac24', 'configuration_interest': '3 BHK', 'budget_signal': 'Discussed starting prices; no explicit budget stated by customer.', 'purpose': None, 'timeline': None, 'interest_level': 'warm', 'language_used': 'English', 'site_visit_status': 'not_requested', 'site_visit_details': None, 'follow_up_required': False, 'follow_up_notes': None, 'opted_out': False, 'escalated_to_human': False, 'escalation_reason': None, 'objections_raised': [], 'summary': "Mock-mode summary: conversation covered project details based on customer's messages.", 'turn_count': 1}
+
+======================================================================
+SCENARIO: Hinglish configuration inquiry
+EXPECTED: Bot responds naturally in Hinglish, does not force English.
+----------------------------------------------------------------------
+USER : Bhai 3 BHK ka price kya hai Sector 79 wale project mein?
+BOT  : Northstar One mein 2 BHK ₹1.35 crore se shuru hai aur 3 BHK ₹1.75 crore se, Sector 79 Gurugram mein. Aapko kaunsa configuration pasand aayega?
+
+ANALYTICS: {'session_id': '375b297e-4e70-46a4-be60-15c486410a09', 'configuration_interest': '3 BHK', 'budget_signal': 'Discussed starting prices; no explicit budget stated by customer.', 'purpose': None, 'timeline': None, 'interest_level': 'warm', 'language_used': 'Hinglish', 'site_visit_status': 'not_requested', 'site_visit_details': None, 'follow_up_required': False, 'follow_up_notes': None, 'opted_out': False, 'escalated_to_human': False, 'escalation_reason': None, 'objections_raised': [], 'summary': "Mock-mode summary: conversation covered project details based on customer's messages.", 'turn_count': 1}
+
+======================================================================
+SCENARIO: Price objection
+EXPECTED: Bot acknowledges the objection empathetically, does not invent a discount, offers a next step.
+----------------------------------------------------------------------
+USER : That's way too expensive for me, I was expecting something cheaper.
+BOT  : Thanks for sharing that! Are you looking at a 2 BHK or 3 BHK, and is this for your own use or investment?
+
+ANALYTICS: {'session_id': '5f410ba3-8501-4bd8-a4d9-c7920e6440e4', 'configuration_interest': '3 BHK', 'budget_signal': None, 'purpose': 'investment', 'timeline': None, 'interest_level': 'warm', 'language_used': 'English', 'site_visit_status': 'not_requested', 'site_visit_details': None, 'follow_up_required': False, 'follow_up_notes': None, 'opted_out': False, 'escalated_to_human': False, 'escalation_reason': None, 'objections_raised': ['price too high'], 'summary': "Mock-mode summary: conversation covered project details based on customer's messages.", 'turn_count': 1}
+
+======================================================================
+SCENARIO: Busy / call later
+EXPECTED: Bot backs off immediately, asks for a better time, logs a follow-up (visible in analytics.follow_up_required).
+----------------------------------------------------------------------
+USER : I'm busy right now, call me back next week.
+BOT  : No worries — when would be a better time to reach you?
+
+ANALYTICS: {'session_id': '720a66fa-aa20-42c2-a1c8-c06cab352f70', 'configuration_interest': None, 'budget_signal': None, 'purpose': None, 'timeline': None, 'interest_level': 'cold', 'language_used': 'English', 'site_visit_status': 'not_requested', 'site_visit_details': None, 'follow_up_required': True, 'follow_up_notes': 'Customer asked to be contacted later (exact time not captured in mock mode).', 'opted_out': False, 'escalated_to_human': False, 'escalation_reason': None, 'objections_raised': [], 'summary': "Mock-mode summary: conversation covered project details based on customer's messages.", 'turn_count': 1}
+
+======================================================================
+SCENARIO: Opt-out / stop contacting
+EXPECTED: Bot immediately confirms opt-out, ends conversation, does not pitch again. analytics.opted_out == true.
+----------------------------------------------------------------------
+USER : Please stop contacting me, I'm not interested at all.
+BOT  : Understood — I won't contact you again. Thank you for your time.
+(conversation flagged as ended by agent)
+
+ANALYTICS: {'session_id': '42e75745-f50a-496b-9e6a-d1fe3044e2d0', 'configuration_interest': None, 'budget_signal': None, 'purpose': None, 'timeline': None, 'interest_level': 'cold', 'language_used': 'English', 'site_visit_status': 'not_requested', 'site_visit_details': None, 'follow_up_required': False, 'follow_up_notes': None, 'opted_out': True, 'escalated_to_human': False, 'escalation_reason': None, 'objections_raised': [], 'summary': "Mock-mode summary: conversation covered project details based on customer's messages.", 'turn_count': 1}
+
+======================================================================
+SCENARIO: Unknown question (possession date)
+EXPECTED: Bot admits it doesn't have the possession date, offers escalation/follow-up, does NOT invent a date.
+----------------------------------------------------------------------
+USER : When exactly will possession be handed over?
+BOT  : I don't have that exact detail on hand — I can have a specialist confirm it for you. Would that work?
+
+ANALYTICS: {'session_id': '630ae1c6-2729-433c-9a9a-fa5104cd6052', 'configuration_interest': None, 'budget_signal': None, 'purpose': None, 'timeline': None, 'interest_level': 'cold', 'language_used': 'English', 'site_visit_status': 'not_requested', 'site_visit_details': None, 'follow_up_required': False, 'follow_up_notes': None, 'opted_out': False, 'escalated_to_human': False, 'escalation_reason': None, 'objections_raised': [], 'summary': "Mock-mode summary: conversation covered project details based on customer's messages.", 'turn_count': 1}
+
+======================================================================
+SCENARIO: Human escalation request
+EXPECTED: Bot escalates to a human specialist. analytics.escalated_to_human == true.
+----------------------------------------------------------------------
+USER : I don't want to talk to a bot, connect me to a real person.
+BOT  : Sure, I'm connecting you with a Northstar Homes specialist who will follow up shortly.
+
+ANALYTICS: {'session_id': '551ec127-4858-4802-a73a-bd76c85edecc', 'configuration_interest': None, 'budget_signal': None, 'purpose': None, 'timeline': None, 'interest_level': 'cold', 'language_used': 'English', 'site_visit_status': 'not_requested', 'site_visit_details': None, 'follow_up_required': False, 'follow_up_notes': None, 'opted_out': False, 'escalated_to_human': True, 'escalation_reason': 'Customer requested human agent', 'objections_raised': [], 'summary': "Mock-mode summary: conversation covered project details based on customer's messages.", 'turn_count': 1}
+
+======================================================================
+SCENARIO: Site visit booking — success path
+EXPECTED: Bot collects details and books the visit. analytics.site_visit_status == 'booked'.
+----------------------------------------------------------------------
+USER : I'd like to book a site visit for a 2 BHK.
+BOT  : Great, I'll set that up. Could you share your name and phone number to confirm the visit?
+USER : Saturday around 11 AM works. My name is Rohan Mehta, phone 9876543210.
+BOT  : Thanks for sharing that! Are you looking at a 2 BHK or 3 BHK, and is this for your own use or investment?
+
+ANALYTICS: {'session_id': '9ab39d7c-44fa-4249-b7d3-f86054fe7e39', 'configuration_interest': '3 BHK', 'budget_signal': None, 'purpose': 'investment', 'timeline': None, 'interest_level': 'hot', 'language_used': 'English', 'site_visit_status': 'booked', 'site_visit_details': {'date': 'as discussed', 'time': 'as discussed'}, 'follow_up_required': False, 'follow_up_notes': None, 'opted_out': False, 'escalated_to_human': False, 'escalation_reason': None, 'objections_raised': [], 'summary': "Mock-mode summary: conversation covered project details based on customer's messages.", 'turn_count': 2}
+
+======================================================================
+SCENARIO: Site visit booking — deterministic failure (Sunday)
+EXPECTED: Booking fails because Sundays are unavailable in the simulated system; bot offers an alternative instead of pretending it worked. analytics.site_visit_status == 'attempted_failed'.
+----------------------------------------------------------------------
+USER : Book me a site visit this Sunday at 4pm, name Priya Singh, number 9123456780, for a 3 BHK.
+BOT  : I checked, but site visits aren't available on Sundays. Could another day work — maybe Saturday or a weekday?
+
+ANALYTICS: {'session_id': 'bd4c8bcd-6bcc-42ab-9a50-4720f1f49464', 'configuration_interest': '3 BHK', 'budget_signal': None, 'purpose': None, 'timeline': None, 'interest_level': 'hot', 'language_used': 'English', 'site_visit_status': 'attempted_failed', 'site_visit_details': None, 'follow_up_required': False, 'follow_up_notes': None, 'opted_out': False, 'escalated_to_human': False, 'escalation_reason': None, 'objections_raised': [], 'summary': "Mock-mode summary: conversation covered project details based on customer's messages.", 'turn_count': 1}

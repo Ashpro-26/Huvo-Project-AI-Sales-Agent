@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Northstar Homes — AI Sales Agent</title>
+<style>
+  :root {
+    --navy: #10233f;
+    --navy-deep: #0a1a2d;
+    --gold: #c79648;
+    --gold-soft: #e7c88e;
+    --sand: #f5f0ea;
+    --bg: #f3efe9;
+    --panel: rgba(255,255,255,0.8);
+    --panel-strong: rgba(255,255,255,0.92);
+    --bubble-user: linear-gradient(135deg, #122a44 0%, #1d4166 100%);
+    --bubble-bot: rgba(255,255,255,0.9);
+    --stroke: rgba(16,35,63,0.08);
+    --text: #1b2736;
+    --muted: #5e6b78;
+    --shadow: 0 22px 54px rgba(15, 31, 53, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    font-family: "Segoe UI", Inter, "Helvetica Neue", Arial, sans-serif;
+    background:
+      radial-gradient(circle at top, rgba(199,150,72,0.18), transparent 30%),
+      linear-gradient(180deg, #f7f4f2 0%, var(--bg) 100%);
+    color: var(--text);
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  .landing-shell {
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: linear-gradient(135deg, var(--navy) 0%, #163558 48%, var(--navy-deep) 100%);
+    color: white;
+    box-shadow: 0 16px 36px rgba(16,35,63,0.14);
+  }
+
+  .topbar-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 18px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-soft) 100%);
+    color: var(--navy);
+    font-weight: 800;
+    font-size: 15px;
+  }
+
+  .brand-text {
+    font-size: 1.1rem;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+    color: rgba(255,255,255,0.72);
+    font-size: 0.86rem;
+    letter-spacing: 0.02em;
+  }
+
+  .nav a:hover {
+    color: white;
+  }
+
+  .nav-cta {
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--gold) 0%, #d5ad67 100%);
+    color: var(--navy);
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(199,150,72,0.28);
+  }
+
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 54px 28px 20px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 28px;
+    align-items: center;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16,35,63,0.05);
+    border: 1px solid rgba(16,35,63,0.08);
+    color: var(--navy);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    border-radius: 999px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.4rem, 4vw, 4rem);
+    line-height: 1.02;
+    margin: 18px 0 16px;
+    letter-spacing: -0.06em;
+    color: var(--navy-deep);
+  }
+
+  .hero h1 span {
+    color: var(--gold);
+  }
+
+  .hero-copy {
+    font-size: 1.04rem;
+    line-height: 1.7;
+    color: var(--muted);
+    max-width: 560px;
+    margin: 0 0 24px;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+  }
+
+  .primary-btn, .secondary-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 15px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .primary-btn:hover, .secondary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(16,35,63,0.12);
+  }
+
+  .primary-btn {
+    background: linear-gradient(135deg, var(--gold) 0%, #d9b36d 100%);
+    color: var(--navy);
+  }
+
+  .secondary-btn {
+    background: rgba(255,255,255,0.7);
+    color: var(--navy);
+    border: 1px solid rgba(16,35,63,0.08);
+  }
+
+  .mini-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .mini-stat {
+    min-width: 120px;
+  }
+
+  .mini-stat strong {
+    display: block;
+    color: var(--navy-deep);
+    font-size: 1.3rem;
+    letter-spacing: -0.04em;
+  }
+
+  .mini-stat span {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .property-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.74), rgba(255,255,255,0.9));
+    border: 1px solid rgba(16,35,63,0.08);
+    box-shadow: var(--shadow);
+    border-radius: 28px;
+    overflow: hidden;
+  }
+
+  .property-image {
+    height: 270px;
+    background:
+      linear-gradient(180deg, rgba(9,19,32,0.18), rgba(9,19,32,0.38)),
+      url('https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80') center/cover no-repeat;
+    position: relative;
+  }
+
+  .property-badge {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    background: rgba(255,255,255,0.9);
+    color: var(--navy);
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .property-body {
+    padding: 22px 22px 18px;
+  }
+
+  .property-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .property-name {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--navy-deep);
+    letter-spacing: -0.04em;
+  }
+
+  .property-location {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-bottom: 12px;
+  }
+
+  .price-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 18px 0 12px;
+  }
+
+  .price-box {
+    background: rgba(245,240,234,0.85);
+    border: 1px solid rgba(16,35,63,0.05);
+    border-radius: 16px;
+    padding: 12px 14px;
+  }
+
+  .price-box .label {
+    color: var(--muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .price-box strong {
+    display: block;
+    color: var(--navy-deep);
+    font-size: 1.1rem;
+    letter-spacing: -0.04em;
+  }
+
+  .property-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 12px;
+  }
+
+  .meta-pill {
+    background: rgba(16,35,63,0.03);
+    border: 1px solid rgba(16,35,63,0.07);
+    border-radius: 999px;
+    padding: 6px 10px;
+  }
+
+  .main-panel {
+    max-width: 1200px;
+    margin: 16px auto 0;
+    padding: 0 28px 36px;
+  }
+
+  .chat-card {
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(16,35,63,0.08);
+    box-shadow: var(--shadow);
+    border-radius: 28px;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px 12px;
+    border-bottom: 1px solid rgba(16,35,63,0.06);
+    background: rgba(255,255,255,0.2);
+  }
+
+  .chat-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--navy-deep);
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #5ab77d;
+    box-shadow: 0 0 0 5px rgba(90,183,125,0.14);
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 12px 20px 0;
+  }
+
+  .controls label {
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.82rem;
+  }
+
+  .controls select, .controls button {
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(16,35,63,0.1);
+    background: rgba(255,255,255,0.8);
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+
+  .controls button:hover {
+    box-shadow: 0 8px 18px rgba(16,35,63,0.08);
+  }
+
+  #chatWindow {
+    background: linear-gradient(180deg, rgba(16,35,63,0.02), rgba(255,255,255,0.36));
+    border-radius: 20px;
+    height: 440px;
+    overflow-y: auto;
+    padding: 18px 16px;
+    margin: 14px 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 1px solid rgba(16,35,63,0.06);
+  }
+
+  .msg {
+    max-width: 76%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    line-height: 1.55;
+    font-size: 0.95rem;
+    box-shadow: 0 10px 18px rgba(18,23,31,0.05);
+    white-space: pre-wrap;
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    background: var(--bubble-user);
+    color: white;
+    border-bottom-right-radius: 6px;
+  }
+
+  .msg.bot {
+    align-self: flex-start;
+    background: var(--bubble-bot);
+    color: var(--text);
+    border-bottom-left-radius: 6px;
+    border: 1px solid rgba(16,35,63,0.04);
+  }
+
+  .msg.system {
+    align-self: center;
+    max-width: 80%;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-style: italic;
+    background: rgba(255,255,255,0.5);
+    border-radius: 999px;
+    border: 1px solid rgba(16,35,63,0.04);
+    box-shadow: none;
+  }
+
+  .chat-input-wrap {
+    display: flex;
+    gap: 10px;
+    padding: 0 20px 20px;
+  }
+
+  #messageInput {
+    flex: 1;
+    padding: 15px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(16,35,63,0.12);
+    background: rgba(255,255,255,0.9);
+    font-size: 0.95rem;
+    min-height: 52px;
+  }
+
+  #messageInput:focus {
+    outline: none;
+    border-color: rgba(199,150,72,0.8);
+    box-shadow: 0 0 0 4px rgba(199,150,72,0.12);
+  }
+
+  .primary-btn.send-btn {
+    min-width: 120px;
+    border-radius: 14px;
+    padding: 0 18px;
+  }
+
+  .mock-banner {
+    background: rgba(255,244,224,0.95);
+    border: 1px solid rgba(199,150,72,0.3);
+    color: #6a4e1d;
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: 0.76rem;
+    line-height: 1.6;
+    margin: 20px 28px 0;
+    display: none;
+  }
+
+  .mock-banner code {
+    font-family: "Consolas", monospace;
+  }
+
+  #analyticsPanel {
+    background: rgba(255,255,255,0.8);
+    border: 1px solid rgba(16,35,63,0.08);
+    border-radius: 22px;
+    margin-top: 20px;
+    padding: 18px 18px 14px;
+    display: none;
+    box-shadow: var(--shadow);
+  }
+
+  #analyticsPanel h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: var(--navy-deep);
+    font-size: 1.1rem;
+  }
+
+  #analyticsPanel pre {
+    background: #f7f4f0;
+    border-radius: 14px;
+    padding: 12px;
+    border: 1px solid rgba(16,35,63,0.06);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 0;
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .topbar-inner,
+    .hero,
+    .main-panel {
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+
+    .nav {
+      display: none;
+    }
+
+    .controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .chat-input-wrap {
+      flex-direction: column;
+    }
+
+    .send-btn {
+      width: 100%;
+      height: 52px;
+    }
+
+    #chatWindow {
+      height: 360px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="landing-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark">N</div>
+          <div class="brand-text">Northstar Homes</div>
+        </div>
+
+        <nav class="nav" aria-label="Main navigation">
+          <a href="#overview">Overview</a>
+          <a href="#location">Location</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#contact">Contact</a>
+        </nav>
+
+        <button class="nav-cta" type="button">Book a Visit</button>
+      </div>
+    </header>
+
+    <section class="hero" id="overview">
+      <div>
+        <div class="eyebrow">Luxury living in Gurugram</div>
+        <h1>Find the right home for <span>your next chapter</span>.</h1>
+        <p class="hero-copy">
+          Discover Northstar One in Sector 79, Gurugram — thoughtfully designed residences for modern living,
+          with a smooth AI-assisted buying experience from the first conversation to the final site visit.
+        </p>
+
+        <div class="hero-actions">
+          <button class="primary-btn" type="button">Schedule a Site Visit</button>
+          <button class="secondary-btn" type="button">Explore Residences</button>
+        </div>
+
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <strong>2 BHK</strong>
+            <span>From ₹1.35 Cr</span>
+          </div>
+          <div class="mini-stat">
+            <strong>3 BHK</strong>
+            <span>From ₹1.75 Cr</span>
+          </div>
+          <div class="mini-stat">
+            <strong>Sector 79</strong>
+            <span>Gurugram</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="property-card" id="pricing">
+        <div class="property-image">
+          <div class="property-badge">Northstar One</div>
+        </div>
+        <div class="property-body">
+          <div class="property-topline">
+            <div class="property-name">Northstar One</div>
+          </div>
+          <div class="property-location">Sector 79, Gurugram</div>
+
+          <div class="price-grid">
+            <div class="price-box">
+              <div class="label">2 BHK</div>
+              <strong>₹1.35 Cr</strong>
+            </div>
+            <div class="price-box">
+              <div class="label">3 BHK</div>
+              <strong>₹1.75 Cr</strong>
+            </div>
+          </div>
+
+          <div class="property-meta">
+            <span class="meta-pill">Luxury apartments</span>
+            <span class="meta-pill">Smart investment</span>
+            <span class="meta-pill">Ready for inquiry</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <main class="main-panel">
+      <div id="mockBanner" class="mock-banner">
+        ⚠️ Running in MOCK MODE (no Gemini key configured) — using a simplified rule-based responder
+        instead of the real LLM + prompt so the UI remains runnable without credentials. Set your key in
+        <code>.env</code> for the actual agent behaviour.
+      </div>
+
+      <div class="chat-card" id="contact">
+        <div class="chat-header">
+          <h2>Ask about your ideal home</h2>
+          <div class="status-dot" title="Live assistant status"></div>
+        </div>
+
+        <div class="controls">
+          <label>Channel:
+            <select id="channelSelect">
+              <option value="chat">Chat</option>
+              <option value="voice">Voice (simulated)</option>
+            </select>
+          </label>
+          <button class="secondary-btn" id="resetBtn" type="button">New conversation</button>
+
+
+        <div id="chatWindow"></div>
+
+        <div class="chat-input-wrap">
+          <input id="messageInput" type="text" placeholder="Type a message… (English / Hindi / Hinglish)" autocomplete="off" />
+          <button class="primary-btn send-btn" type="submit" form="inputForm">Send</button>
+        </div>
+      </div>
+
+      <form id="inputForm" style="display:none"></form>
+
+      <div id="analyticsPanel">
+        <h3>Conversation Analytics</h3>
+        <pre id="analyticsJson"></pre>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_BASE = "";
+    let sessionId = crypto.randomUUID();
+    let ended = false;
+
+    const chatWindow = document.getElementById("chatWindow");
+    const form = document.getElementById("inputForm");
+    const input = document.getElementById("messageInput");
+    const channelSelect = document.getElementById("channelSelect");
+    const analyticsPanel = document.getElementById("analyticsPanel");
+    const analyticsJson = document.getElementById("analyticsJson");
+
+    function addMsg(text, cls) {
+      const div = document.createElement("div");
+      div.className = "msg " + cls;
+      div.textContent = text;
+      chatWindow.appendChild(div);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function init() {
+      const res = await fetch(API_BASE + "/api/mode");
+      const data = await res.json();
+      if (data.mock_mode) document.getElementById("mockBanner").style.display = "block";
+      addMsg("Namaste! Main Aanya bol rahi hoon, Northstar Homes se. How can I help you today — looking for a 2 BHK or 3 BHK in Sector 79, Gurugram?", "bot");
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text || ended) return;
+      addMsg(text, "user");
+      input.value = "";
+
+      try {
+        const res = await fetch(API_BASE + "/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId, message: text, channel: channelSelect.value }),
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        addMsg(data.reply, "bot");
+
+        if (data.ended) {
+          ended = true;
+          addMsg("— Conversation ended by request —", "system");
+        }
+      } catch (err) {
+        addMsg("Error talking to server: " + err.message, "system");
+      }
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      sessionId = crypto.randomUUID();
+      ended = false;
+      chatWindow.innerHTML = "";
+      analyticsPanel.style.display = "none";
+      init();
+    });
+
+    document.getElementById("endBtn").addEventListener("click", async () => {
+      try {
+        const res = await fetch(API_BASE + "/api/end", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        analyticsJson.textContent = JSON.stringify(data, null, 2);
+        analyticsPanel.style.display = "block";
+        ended = true;
+        addMsg("— Conversation ended, analytics generated below —", "system");
+      } catch (err) {
+        addMsg("Error ending conversation: " + err.message, "system");
+      }
+    });
+
+    document.querySelector(".send-btn").addEventListener("click", (event) => {
+      event.preventDefault();
+      form.requestSubmit();
+    });
+
+    document.getElementById("messageInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
