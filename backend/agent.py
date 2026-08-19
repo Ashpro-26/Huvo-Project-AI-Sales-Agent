@@ -287,66 +287,209 @@ def _mock_reply(session: Session, msg: str) -> str:
     def is_hindi(text):
         return any("\u0900" <= ch <= "\u097f" for ch in text)
 
-    hinglish_markers = ["hai", "kya", "nahi", "kaise", "kitna", "aap", "mujhe", "bhai"]
+    hinglish_markers = ["hai", "kya", "nahi", "kaise", "kitna", "aap", "mujhe", "bhai", "mein", "se", "aur", "bolte", "bolti"]
     lang = "Hindi" if is_hindi(msg) else ("Hinglish" if any(w in m for w in hinglish_markers) else "English")
+    
+    # Track language used in this conversation; respect user's language preference
+    if session.state["language_used"] is None:
+        session.state["language_used"] = lang
+    elif lang != "English":
+        session.state["language_used"] = lang
+
+    # Extract phone number if present (10-digit pattern)
+    phone_match = re.search(r'\b(\d{10})\b', msg)
+    if phone_match:
+        session.state["customer_phone"] = phone_match.group(1)
+    
+    # Extract name if it looks like a name (capitalize pattern)
+    if any(word in m for word in ["name", "i'm", "im", "mera naam", "my name", "call me"]):
+        # Try to extract name: look for patterns like "name is XYZ" or "I'm XYZ"
+        name_match = re.search(r'(?:name\s+is|i[\'s]*m|call me)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)', msg, re.IGNORECASE)
+        if name_match:
+            session.state["customer_name"] = name_match.group(1).strip()
+
+    # GREETING: Only greet if it's a simple greeting message (short and primarily a greeting)
+    is_greeting = any(w in m for w in ["hi", "hello", "hey", "namaste", "haan", "how are", "how do", "kaise", "kya haal", "sup", "yo", "greetings"])
+    is_simple_greeting = len(m) < 30 and is_greeting  # Short message + greeting keyword = likely a simple greeting
+    if len(session.messages) == 1 and is_simple_greeting:
+        responses = {
+            "English": "Hello! How can I help you?",
+            "Hinglish": "Namaste! Main aapki kaise madad kar sakti hoon?",
+            "Hindi": "नमस्ते! मैं आपकी कैसे मदद कर सकती हूँ?"
+        }
+        return responses.get(lang, responses["English"])
 
     if any(w in m for w in ["stop", "don't contact", "do not contact", "remove me", "band karo"]):
         session.state["opted_out"] = True
-        return ("Understood — I won't contact you again. Thank you for your time." if lang == "English"
-                else "Theek hai, ab aapko dobara contact nahi kiya jayega. Dhanyavaad.")
+        responses = {
+            "English": "Understood — I won't contact you again. Thank you for your time.",
+            "Hinglish": "Theek hai, ab aapko dobara contact nahi kiya jayega. Dhanyavaad.",
+            "Hindi": "ठीक है, अब आपको दोबारा contact नहीं किया जाएगा। धन्यवाद।"
+        }
+        return responses.get(lang, responses["English"])
 
     if any(w in m for w in ["not interested", "no interest", "nahi chahiye"]):
-        return ("No problem at all, thanks for letting me know. If anything changes, feel free to reach out."
-                if lang == "English" else
-                "Koi baat nahi, batane ke liye dhanyavaad. Agar kabhi interest ho to zaroor bataiyega.")
+        responses = {
+            "English": "No problem at all, thanks for letting me know. If anything changes, feel free to reach out.",
+            "Hinglish": "Koi baat nahi, batane ke liye dhanyavaad. Agar kabhi interest ho to zaroor batayega.",
+            "Hindi": "कोई बात नहीं, बताने के लिए धन्यवाद। अगर कभी interest हो तो जरूर बताइएगा।"
+        }
+        return responses.get(lang, responses["English"])
 
     if any(w in m for w in ["busy", "later", "call back", "baad me", "abhi nahi"]):
         session.state["follow_up_required"] = True
         session.state["follow_up_notes"] = "Customer asked to be contacted later (exact time not captured in mock mode)."
-        return ("No worries — when would be a better time to reach you?" if lang == "English"
-                else "Koi baat nahi — kis time par baat karna theek rahega?")
+        responses = {
+            "English": "No worries — when would be a better time to reach you?",
+            "Hinglish": "Koi baat nahi — kis time par baat karna theek rahega?",
+            "Hindi": "कोई बात नहीं — किस समय पर बात करना ठीक रहेगा?"
+        }
+        return responses.get(lang, responses["English"])
 
     if any(w in m for w in ["human", "agent", "manager", "real person", "insaan"]):
         session.state["escalated_to_human"] = True
         session.state["escalation_reason"] = "Customer requested human agent"
-        return ("Sure, I'm connecting you with a Northstar Homes specialist who will follow up shortly."
-                if lang == "English" else
-                "Bilkul, main aapko Northstar Homes ke specialist se connect kar rahi hoon, woh jald follow up karenge.")
+        responses = {
+            "English": "Sure, I'm connecting you with a Northstar Homes specialist who will follow up shortly.",
+            "Hinglish": "Bilkul, main aapko Northstar Homes ke specialist se connect kar rahi hoon, woh jald follow up karenge.",
+            "Hindi": "बिलकुल, मैं आपको Northstar Homes के specialist से connect कर रही हूँ, वो जल्द follow up करेंगे।"
+        }
+        return responses.get(lang, responses["English"])
+
+    # Extract and track configuration and purpose from user message
+    if any(w in m for w in ["2bhk", "2 bhk", "2 b h k"]):
+        session.state["configuration_interest"] = "2 BHK"
+    elif any(w in m for w in ["3bhk", "3 bhk", "3 b h k"]):
+        session.state["configuration_interest"] = "3 BHK"
+    
+    if any(w in m for w in ["own use", "for my own use", "self use", "family", "rehne", "apne liye", "own", "apne", "personal use", "khud", "khud ke liye", "mera use"]):
+        session.state["purpose"] = "self-use"
+    elif any(w in m for w in ["investment", "sirf invest", "invest karna", "sirf paisa", "profit"]):
+        session.state["purpose"] = "investment"
 
     if any(w in m for w in ["price", "cost", "kitna", "budget", "crore", "lakh"]):
-        return ("Northstar One has 2 BHK starting at ₹1.35 crore and 3 BHK starting at ₹1.75 crore, "
-                "in Sector 79, Gurugram. Which configuration are you leaning towards?" if lang == "English" else
-                "Northstar One mein 2 BHK ₹1.35 crore se shuru hai aur 3 BHK ₹1.75 crore se, Sector 79 Gurugram mein. "
-                "Aapko kaunsa configuration pasand aayega?")
+        responses = {
+            "English": ("Northstar One has 2 BHK starting at ₹1.35 crore and 3 BHK starting at ₹1.75 crore, "
+                        "in Sector 79, Gurugram. Which configuration are you leaning towards?"),
+            "Hinglish": ("Northstar One mein 2 BHK ₹1.35 crore se shuru hai aur 3 BHK ₹1.75 crore se, Sector 79 Gurugram mein. "
+                         "Aapko kaunsa configuration pasand aayega?"),
+            "Hindi": ("Northstar One में 2 BHK ₹1.35 crore से शुरू है और 3 BHK ₹1.75 crore से, Sector 79 Gurugram में। "
+                     "आपको कौनसा configuration पसंद आयेगा?")
+        }
+        return responses.get(lang, responses["English"])
 
-    if ("2bhk" in m or "2 bhk" in m or "2bhk" in m or "2 b h k" in m) and ("own use" in m or "for my own use" in m or "self use" in m or "family" in m or "rehne" in m or "own" in m):
-        session.state["site_visit_status"] = "not_requested"
-        return ("Thanks, that helps. A 2 BHK for self-use is a good fit for this project. I can help with the next step if you'd like a site visit or a callback."
-                if lang == "English" else
-                "Shukriya, yeh clear hai. 2 BHK self-use ke liye project bahut suitable hai. Agar aap site visit ya callback chahte hain, main madad kar sakta hoon.")
+    if (("2bhk" in m or "2 bhk" in m or "2 b h k" in m or "3bhk" in m or "3 bhk" in m or "3 b h k" in m) and 
+        ("own use" in m or "for my own use" in m or "self use" in m or "family" in m or "rehne" in m or "own" in m or "apne" in m or "personal use" in m or "khud" in m)):
+        config = "2 BHK" if any(w in m for w in ["2bhk", "2 bhk", "2 b h k"]) else "3 BHK"
+        responses = {
+            "English": f"Thanks, that helps. A {config} for self-use is a good fit for this project. I can help with the next step if you'd like a site visit or a callback.",
+            "Hinglish": f"Shukriya, yeh clear hai. {config} self-use ke liye project bahut suitable hai. Agar aap site visit ya callback chahte hain, main madad kar sakti hoon.",
+            "Hindi": f"धन्यवाद, यह स्पष्ट है। {config} self-use के लिए project बहुत suitable है। अगर आप site visit या callback चाहते हैं, मैं मदद कर सकती हूँ।"
+        }
+        return responses.get(lang, responses["English"])
 
-    if any(w in m for w in ["visit", "site visit", "dekhna", "book"]):
+    if any(w in m for w in ["visit", "site visit", "dekhna", "book", "booking", "book karna"]):
         session.state["booking_attempts"] += 1
         if "sunday" in m:
             session.state["site_visit_status"] = "attempted_failed"
-            return ("I checked, but site visits aren't available on Sundays. Could another day work — "
-                    "maybe Saturday or a weekday?" if lang == "English" else
-                    "Check kiya, lekin Sunday ko site visit available nahi hai. Koi aur din theek rahega, jaise Saturday?")
+            responses = {
+                "English": "I checked, but site visits aren't available on Sundays. Could another day work — maybe Saturday or a weekday?",
+                "Hinglish": "Check kiya, lekin Sunday ko site visit available nahi hai. Koi aur din theek rahega, jaise Saturday?",
+                "Hindi": "चेक किया, लेकिन Sunday को site visit available नहीं है। कोई और दिन ठीक रहेगा, जैसे Saturday?"
+            }
+            return responses.get(lang, responses["English"])
         session.state["site_visit_status"] = "booked"
         session.state["site_visit_details"] = {"date": "as discussed", "time": "as discussed"}
-        return ("Great, I'll set that up. Could you share your name and phone number to confirm the visit?"
-                if lang == "English" else
-                "Bahut badhiya, main visit set kar deti hoon. Apna naam aur phone number bata dijiye confirm karne ke liye.")
+        responses = {
+            "English": "Great, I'll set that up. Could you share your name and phone number to confirm the visit?",
+            "Hinglish": "Bahut badhiya, main visit set kar deti hoon. Apna naam aur phone number bata dijiye confirm karne ke liye.",
+            "Hindi": "बहुत बढ़िया, मैं visit set कर देती हूँ। अपना नाम और phone number बता दिजिए confirm करने के लिए।"
+        }
+        return responses.get(lang, responses["English"])
 
     if any(w in m for w in ["amenities", "possession", "rera", "loan", "emi", "discount", "offer"]):
-        return ("I don't have that exact detail on hand — I can have a specialist confirm it for you. "
-                "Would that work?" if lang == "English" else
-                "Yeh exact detail mere paas abhi nahi hai — main specialist se confirm karwa deti hoon. Theek hai?")
+        responses = {
+            "English": "I don't have that exact detail on hand — I can have a specialist confirm it for you. Would that work?",
+            "Hinglish": "Yeh exact detail mere paas abhi nahi hai — main specialist se confirm karwa deti hoon. Theek hai?",
+            "Hindi": "यह exact detail मेरे पास अभी नहीं है — मैं specialist से confirm करा देती हूँ। ठीक है?"
+        }
+        return responses.get(lang, responses["English"])
 
     if any(w in m for w in ["bye", "thanks", "thank you", "dhanyavaad", "shukriya"]):
-        return ("Thank you for your time — have a great day!" if lang == "English"
-                else "Aapke time ke liye dhanyavaad — aapka din shubh ho!")
+        responses = {
+            "English": "Thank you for your time — have a great day!",
+            "Hinglish": "Aapke time ke liye dhanyavaad — aapka din shubh ho!",
+            "Hindi": "आपके time के लिए धन्यवाद — आपका दिन शुभ हो!"
+        }
+        return responses.get(lang, responses["English"])
 
-    return ("Thanks for sharing that! Are you looking at a 2 BHK or 3 BHK, and is this for your own use or investment?"
-            if lang == "English" else
-            "Bataane ke liye dhanyavaad! Aap 2 BHK dekh rahe hain ya 3 BHK, aur yeh khud rehne ke liye hai ya investment ke liye?")
+    # Handle phone number when we're waiting for it (after callback request)
+    if session.state["phone_asked_for_callback"] and session.state["customer_phone"]:
+        session.state["follow_up_required"] = True
+        session.state["callback_requested"] = True
+        session.state["follow_up_notes"] = f"Customer requested callback from specialist. Phone: {session.state['customer_phone']}"
+        responses = {
+            "English": "Perfect! A specialist will reach out to you shortly with more details. Thank you!",
+            "Hinglish": "Bilkul! Ek specialist aapko jald hi call karenge aur details batayenge. Dhanyavaad!",
+            "Hindi": "बिलकुल! एक specialist आपको जल्द ही call करेंगे और details बताएंगे। धन्यवाद!"
+        }
+        return responses.get(lang, responses["English"])
+
+    # Handle callback preference (after site visit/callback question)
+    if any(w in m for w in ["callback", "kripya callback", "callback please", "specialist se", "koi specialist", "kripya specialist", "ok", "theek hai", "yes", "haan", "bilkul"]):
+        # If phone not yet captured, ask for it
+        if not session.state["customer_phone"]:
+            responses = {
+                "English": "Great! To send you a callback, could you please share your phone number?",
+                "Hinglish": "Bahut badhiya! Callback bhejne ke liye, kripya apna phone number bata dijiye.",
+                "Hindi": "बहुत बढ़िया! Callback भेजने के लिए, कृपया अपना phone number बता दिजिए।"
+            }
+            session.state["phone_asked_for_callback"] = True
+            return responses.get(lang, responses["English"])
+        
+        # If we already have phone, confirm callback
+        session.state["follow_up_required"] = True
+        session.state["callback_requested"] = True
+        session.state["follow_up_notes"] = f"Customer requested callback from specialist. Phone: {session.state['customer_phone']}"
+        responses = {
+            "English": "Perfect! A specialist will reach out to you shortly with more details. Thank you!",
+            "Hinglish": "Bilkul! Ek specialist aapko jald hi call karenge aur details batayenge. Dhanyavaad!",
+            "Hindi": "बिलकुल! एक specialist आपको जल्द ही call करेंगे और details बताएंगे। धन्यवाद!"
+        }
+        return responses.get(lang, responses["English"])
+
+    # Default response: check what we already know to avoid redundant re-asking
+    if session.state["configuration_interest"] is not None and session.state["purpose"] is not None:
+        # Already know config and purpose, move to next step
+        responses = {
+            "English": "Got it! Would you like to book a site visit or would you prefer a callback from one of our specialists?",
+            "Hinglish": "Samjh gaya! Kya aap site visit book karna chahte hain ya kisi specialist se callback prefer karenge?",
+            "Hindi": "समझ गया! क्या आप site visit book करना चाहते हैं या किसी specialist से callback prefer करेंगे?"
+        }
+        return responses.get(lang, responses["English"])
+    elif session.state["configuration_interest"] is not None:
+        # Already know config, ask about purpose
+        config = session.state["configuration_interest"]
+        responses = {
+            "English": f"Great, {config} is a good choice. Is this for your own use or investment?",
+            "Hinglish": f"Bahut badhiya, {config} bilkul sahi choice hai. Yeh apne liye hai ya investment ke liye?",
+            "Hindi": f"बहुत बढ़िया, {config} बिलकुल सही choice है। यह अपने लिए है या investment के लिए?"
+        }
+        return responses.get(lang, responses["English"])
+    elif session.state["purpose"] is not None:
+        # Already know purpose, ask about config
+        purpose = session.state["purpose"]
+        responses = {
+            "English": f"Good to know. For {purpose}, are you interested in a 2 BHK or 3 BHK?",
+            "Hinglish": f"Acha, samjh gaya. {purpose} ke liye, aap 2 BHK ya 3 BHK mein interested hain?",
+            "Hindi": f"अच्छा, समझ गया। {purpose} के लिए, आप 2 BHK या 3 BHK में interested हैं?"
+        }
+        return responses.get(lang, responses["English"])
+    else:
+        # Don't know anything yet, ask everything
+        responses = {
+            "English": "Thanks for sharing that! Are you looking at a 2 BHK or 3 BHK, and is this for your own use or investment?",
+            "Hinglish": "Bataane ke liye dhanyavaad! Aap 2 BHK dekh rahe hain ya 3 BHK, aur yeh khud rehne ke liye hai ya investment ke liye?",
+            "Hindi": "बताने के लिए धन्यवाद! आप 2 BHK देख रहे हैं या 3 BHK, और यह खुद रहने के लिए है या investment के लिए?"
+        }
+        return responses.get(lang, responses["English"])

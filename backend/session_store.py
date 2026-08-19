@@ -27,6 +27,14 @@ class Session:
             "follow_up_required": False,
             "follow_up_notes": None,
             "booking_attempts": 0,
+            # Conversation context to avoid redundant re-asking
+            "configuration_interest": None,  # "2 BHK" | "3 BHK" | "undecided"
+            "purpose": None,  # "self-use" | "investment"
+            "language_used": None,  # "English" | "Hindi" | "Hinglish" (detected from user messages)
+            "customer_phone": None,  # Phone number for callback/booking
+            "customer_name": None,  # Name for callback/booking
+            "callback_requested": False,  # Whether callback was requested
+            "phone_asked_for_callback": False,  # Whether we've asked for phone in callback flow
         }
 
     def add_user_message(self, text: str):
